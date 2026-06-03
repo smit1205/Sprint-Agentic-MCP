@@ -63,8 +63,4 @@ pipeline {
             echo 'Build Failed'
         }
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> d3a27ed (Add MCP framework updates)
