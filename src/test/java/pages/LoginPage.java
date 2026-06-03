@@ -14,7 +14,6 @@ public class LoginPage {
 
     private WebDriver driver;
     private WebDriverWait wait;        // 15s – for main actions
-    private WebDriverWait shortWait;   // 3s  – for fallback checks only
     private JavascriptExecutor js;
 
     @FindBy(xpath = "//a[contains(@href,'login')] | //button[normalize-space()='Login']")
@@ -32,7 +31,6 @@ public class LoginPage {
     public LoginPage(WebDriver driver) {
         this.driver = driver;
         this.wait      = new WebDriverWait(driver, Duration.ofSeconds(15));
-        this.shortWait = new WebDriverWait(driver, Duration.ofSeconds(3));
         this.js = (JavascriptExecutor) driver;
         PageFactory.initElements(driver, this);
     }
@@ -44,12 +42,56 @@ public class LoginPage {
 
     public void login(String username, String password) {
         wait.until(ExpectedConditions.visibilityOf(emailField));
-        emailField.clear();
-        emailField.sendKeys(username);
-        passwordField.clear();
-        passwordField.sendKeys(password);
-        wait.until(ExpectedConditions.elementToBeClickable(loginButton));
-        js.executeScript("arguments[0].click();", loginButton);
+        // Email typing with verification
+        boolean emailTyped = false;
+        for (int i = 0; i < 3; i++) {       //trying it for 3 times due to ads intervention
+            emailField.clear();
+            emailField.sendKeys(username);
+
+            String actualEmail = emailField.getAttribute("value");
+
+            if (username.equals(actualEmail)) {
+                emailTyped = true;
+                break;
+            }
+            System.out.println("Email typing retry #" + (i + 1));
+        }
+        if (!emailTyped) {
+            throw new RuntimeException("Email field did not receive complete value. Expected: " + username + " Actual: " + emailField.getAttribute("value"));
+        }
+
+        // Password typing with verification
+        boolean passwordTyped = false;
+        for (int i = 0; i < 3; i++) {
+            passwordField.clear();
+            passwordField.sendKeys(password);
+            String actualPassword = passwordField.getAttribute("value");
+            if (password.equals(actualPassword)) {
+                passwordTyped = true;
+                break;
+            }
+            System.out.println("Password typing retry #" + (i + 1));
+        }
+        if (!passwordTyped) {
+            throw new RuntimeException(
+                    "Password field did not receive complete value."
+            );
+        }
+
+        wait.until(ExpectedConditions.visibilityOf(loginButton));
+
+        //scrolls to login button
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", loginButton);
+
+        try {
+            loginButton.click();
+        } catch (Exception e) {
+            System.out.println(
+                    "[INFO] Normal click failed. Using JS click."
+            );
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", loginButton);
+        }
+        handleGoogleVignette();
     }
 
     public boolean isDashboardVisible() {
@@ -64,7 +106,8 @@ public class LoginPage {
     }
 
     public boolean isErrorMessageVisible() {
-        // Check 1: Wait up to 10s for DOM alert/toast (invalid credentials - needs time for API response)
+
+        // Check 1: Wait up to 10s for DOM alert/toast (invalid credentials)
         try {
             new WebDriverWait(driver, Duration.ofSeconds(10))
                     .until(ExpectedConditions.visibilityOfElementLocated(
@@ -75,7 +118,7 @@ public class LoginPage {
             return true;
         } catch (Exception ignored) {}
 
-        // Check 2: Empty fields – both values empty + still on login page (no wait needed, instant check)
+        // Check 2: Empty fields – both values empty & still on login page (no wait needed, instant check)
         try {
             String emailVal = emailField.getAttribute("value");
             String passVal  = passwordField.getAttribute("value");
@@ -98,5 +141,20 @@ public class LoginPage {
         } catch (Exception ignored) {}
 
         return false;
+    }
+
+    private void handleGoogleVignette() {
+        try {
+            if (driver.getCurrentUrl().contains("google_vignette")) {
+                System.out.println("[INFO] Google Vignette detected");
+                driver.navigate().back();
+                new WebDriverWait(driver, Duration.ofSeconds(5))
+                        .until(ExpectedConditions.not(
+                                ExpectedConditions.urlContains("google_vignette")
+                        ));
+            }
+        } catch (Exception e) {
+            System.out.println(" No Google Vignette present");
+        }
     }
 }

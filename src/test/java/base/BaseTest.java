@@ -14,7 +14,7 @@ import java.time.Duration;
 public class BaseTest {
 
     protected SelfHealingHelper healingHelper;
-    protected SmartWait         smartWait;
+    protected SmartWait smartWait;
 
     @BeforeMethod(alwaysRun = true)
     public void setup() {
@@ -22,6 +22,7 @@ public class BaseTest {
         String url     = ConfigReader.getUrl();
 
         DriverFactory.initializeBrowser(browser);
+        DriverFactory.getDriver().manage().deleteAllCookies();        //Ensures no previous session exists
         DriverFactory.getDriver().get(url);
 
         WebDriverWait wait = new WebDriverWait(DriverFactory.getDriver(), Duration.ofSeconds(10));

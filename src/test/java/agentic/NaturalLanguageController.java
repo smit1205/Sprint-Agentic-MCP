@@ -91,19 +91,20 @@ public class NaturalLanguageController {
 
         System.out.println("\n[MCP] Generated Selenium script:");
         System.out.println("─".repeat(60));
-        System.out.println(generatedCode);
+        System.out.println(generatedCode);              //prints the generated code
         System.out.println("─".repeat(60));
 
         System.out.println("[MCP] Executing...\n");
-        executor.runGeneratedScript(generatedCode);
+        executor.runGeneratedScript(generatedCode);   //calls the method in script executor class
     }
 
+    //converts a natural language command into Selenium code
     private String callGroqAPI(String userCommand) {
         if (API_KEY == null || API_KEY.isBlank()) {
             throw new IllegalStateException(
                 "GROQ_API_KEY is not set.\n" +
                 "Get a FREE key at: https://console.groq.com\n" +
-                "Then run:  export GROQ_API_KEY=gsk_your_key_here"
+                "Then run: export GROQ_API_KEY=YOUR_API_KEY"
             );
         }
 
@@ -123,10 +124,11 @@ public class NaturalLanguageController {
             ObjectNode userMsg = mapper.createObjectNode();
             userMsg.put("role", "user");
             userMsg.put("content", "Generate Selenium Java code for: " + userCommand);
-            messages.add(userMsg);
+            messages.add(userMsg);          //Generate Selenium Java code for: login with valid credentials
 
             body.set("messages", messages);
 
+            //api request is created
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL))
                 .header("Content-Type", "application/json")
@@ -135,20 +137,20 @@ public class NaturalLanguageController {
                 .build();
 
             HttpResponse<String> response =
-                httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                httpClient.send(request, HttpResponse.BodyHandlers.ofString());  //Actually sends data to Groq
 
             if (response.statusCode() != 200) {
                 throw new RuntimeException(
                     "Groq API error " + response.statusCode() + ":\n" + response.body());
             }
 
-            JsonNode json = mapper.readTree(response.body());
-            String raw = json
+            JsonNode json = mapper.readTree(response.body());       //Convert JSON response into Java object
+            String raw = json                                       //Extract Generated Code
                 .get("choices").get(0)
                 .get("message")
                 .get("content").asText().trim();
 
-            return raw
+            return raw                                                  //return generated script
                 .replaceAll("(?s)^```java\\s*", "")
                 .replaceAll("(?s)^```\\s*",      "")
                 .replaceAll("(?s)\\s*```$",       "")

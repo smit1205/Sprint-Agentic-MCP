@@ -20,13 +20,11 @@ public class NotesPage {
     private WebDriverWait wait;
     private JavascriptExecutor js;
 
-    // ── Locators ──
-    private By addNoteBtn     = By.xpath("//button[normalize-space()='+ Add Note']");
+    // Locators used
+    private By addNoteBtn = By.cssSelector("button[data-testid='add-new-note']");
     private By noteTitleInput = By.xpath("//input[@name='title' or @placeholder='Title']");
     private By noteDescInput  = By.xpath("//textarea[@name='description' or @placeholder='Description']");
     private By categorySelect = By.xpath("//select[@name='category' or @id='category']");
-
-    // FIX 1: "Save" added — edit modal uses "Save", create modal uses "Create"
     private By saveNoteBtn = By.xpath(
             "//button[normalize-space()='Create' or " +
                     "normalize-space()='Save'            or " +
@@ -50,8 +48,7 @@ public class NotesPage {
         this.js     = (JavascriptExecutor) driver;
     }
 
-    // FIX 2: Dismiss any leftover open modal before clicking Add Note
-    // Prevents "Meeting" style TimeoutException when prior test left modal open
+    //  Dismiss any leftover open modal before clicking Add Note
     private void dismissAnyOpenModal() {
         try {
             boolean modalPresent = !driver.findElements(modalOverlay).isEmpty();
@@ -63,14 +60,28 @@ public class NotesPage {
     }
 
     public void clickAddNote() {
+
         dismissAnyOpenModal();
+
+        if (driver.getCurrentUrl().contains("google_vignette")) {
+            driver.navigate().back();
+
+            //wait till we leave the vignette page
+            wait.until(ExpectedConditions.not(
+                    ExpectedConditions.urlContains("google_vignette")
+            ));
+        }
+
+        // wait until dashboard is fully loaded
+        wait.until(ExpectedConditions.urlContains("/notes/app"));
         wait.until(ExpectedConditions.presenceOfElementLocated(addNoteBtn));
         wait.until(ExpectedConditions.elementToBeClickable(addNoteBtn));
-        js.executeScript("arguments[0].scrollIntoView(true);", driver.findElement(addNoteBtn));
-        js.executeScript("arguments[0].click();", driver.findElement(addNoteBtn));
+        WebElement button = driver.findElement(addNoteBtn);
+        js.executeScript("arguments[0].scrollIntoView({block:'center'});", button);
+        js.executeScript("arguments[0].click();", button);
     }
 
-    // FIX 3: JS clear + Ctrl+A + DELETE ensures pre-populated fields are wiped reliably
+    // JS clear + Ctrl+A + DELETE ensures pre-populated fields are wiped reliably
     private void clearAndType(By locator, String text) {
         WebElement el = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
         js.executeScript("arguments[0].value = '';", el);
@@ -114,7 +125,6 @@ public class NotesPage {
         selectCategory(category);
         clickSave();
 
-        // ✅ 30s timeout, handles stale refs and slow API
         new WebDriverWait(DriverFactory.getDriver(), Duration.ofSeconds(30))
                 .until(driver -> {
                     try {
@@ -125,12 +135,13 @@ public class NotesPage {
                     } catch (StaleElementReferenceException e) {
                         return false;
                     }
-                });
+                }); //it is a lambda expression Selenium repeatedly executes the code inside until true is returned
+        //list of notes is created  using stream and then found using title matching
     }
 
     public boolean isNoteVisible(String title) {
         try {
-            // ✅ Same pattern — safe against stale refs
+
             wait.until(driver -> {
                 try {
                     return driver.findElements(By.cssSelector("[data-testid='note-card-title']"))
@@ -168,6 +179,7 @@ public class NotesPage {
         js.executeScript("arguments[0].click();", driver.findElement(catTab));
     }
 
+    /*
     public void clickEditNote(String title) {
         By editInCard = By.xpath(
                 "//*[contains(@class,'card') or @data-testid='note-card'][.//*[normalize-space()='" + title + "']]" +
@@ -177,6 +189,7 @@ public class NotesPage {
         wait.until(ExpectedConditions.elementToBeClickable(editInCard));
         js.executeScript("arguments[0].click();", driver.findElement(editInCard));
     }
+
 
     // FIX 4: Wait for modal open AND title field pre-populated before clearing
     // Prevents race condition where clear() fires on an empty field before React populates it
@@ -194,7 +207,7 @@ public class NotesPage {
         try {
             wait.until(ExpectedConditions.invisibilityOfElementLocated(modalOverlay));
         } catch (Exception ignored) {}
-    }
+    }*/
 
     public void clickDeleteNote(String title) {
         By deleteInCard = By.xpath(
@@ -210,7 +223,7 @@ public class NotesPage {
         wait.until(ExpectedConditions.visibilityOfElementLocated(anyDialog));
         wait.until(ExpectedConditions.elementToBeClickable(confirmDeleteBtn));
         js.executeScript("arguments[0].click();", driver.findElement(confirmDeleteBtn));
-    }
+    }//clicks confirm delete button
 
     public void deleteNote(String title) {
         clickDeleteNote(title);
@@ -259,7 +272,7 @@ public class NotesPage {
                             "[.//*[normalize-space()='" + title + "']]//button[@data-testid='view-note']"
             );
             WebElement view = driver.findElement(viewBtn);
-            String href = view.getAttribute("href");
+            String href = view.getAttribute("href"); //if note-id doesn't exist it extracts id from url take everything after last /
             if (href != null && href.contains("/")) {
                 return href.substring(href.lastIndexOf("/") + 1);
             }

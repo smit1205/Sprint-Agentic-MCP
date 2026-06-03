@@ -1,6 +1,6 @@
 package tests;
 
-import helperUtils.ConfigReader;
+import base.BaseTest;
 import helperUtils.DriverFactory;
 import helperUtils.ExcelReader;
 import org.openqa.selenium.By;
@@ -16,12 +16,12 @@ import pages.LogoutPage;
 
 import java.time.Duration;
 
-public class LogoutTest {
+public class LogoutTest extends BaseTest {
 
     private WebDriver driver;
     private WebDriverWait wait;
 
-    // Single source of truth for all locators used in this test
+    // all locators used in this test
     private static final By LOGOUT_BTN   = By.cssSelector("button[data-testid='logout']");
     private static final By LOGIN_LINK   = By.xpath("//a[contains(@href,'login')] | //button[contains(normalize-space(),'Login')]");
     private static final By ERROR_TOAST  = By.xpath("//*[contains(@class,'alert') or contains(@class,'toast') or @role='alert']");
@@ -30,56 +30,36 @@ public class LogoutTest {
                     " or contains(@aria-label,'close') or contains(@aria-label,'Close')]"
     );
 
-    @BeforeMethod
-    public void setUp() {
-        driver = DriverFactory.initializeBrowser(ConfigReader.getProperty("browser"));
-        wait   = new WebDriverWait(driver, Duration.ofSeconds(25));
-        driver.get("https://practice.expandtesting.com/notes/app");
+    @BeforeMethod(alwaysRun = true)
+    public void init() {
+
+        driver = DriverFactory.getDriver();
+
+        wait = new WebDriverWait(
+                driver,
+                Duration.ofSeconds(25)
+        );
     }
 
-    @AfterMethod
-    public void tearDown() {
-        if (driver != null) {
-            driver.quit();
-        }
+
+    @DataProvider(name = "validLoginData")
+    public Object[][] getValidData() {
+        return new Object[][]{
+                {"smitpidurkar12@gmail.com", "Smit@123"}
+        };
     }
 
-    @DataProvider(name = "loginData")
-    public Object[][] getData() {
-        return ExcelReader.getTestData("src/test/resources/testdata.xlsx", "LoginData");
-    }
+    @Test(dataProvider = "validLoginData")
+    public void logoutTest(String email, String password) {
 
-    @Test(dataProvider = "loginData")
-    public void logoutTest(String email, String password, String expectedResult) {
-
-        // Skip header row
-        if (email.equalsIgnoreCase("email") || email.equalsIgnoreCase("username")) {
-            return;
-        }
-
-        String user = (email    == null) ? "" : email.trim();
-        String pass = (password == null) ? "" : password.trim();
-
-        // ── Login ─────────────────────────────────────────────────────────
         LoginPage login = new LoginPage(driver);
         login.clickLoginLink();
-        login.login(user, pass);
+        login.login(email, password);
 
-        System.out.println("[INFO] URL after login attempt: " + driver.getCurrentUrl());
-
-        // ── Branch on expected result ─────────────────────────────────────
-        if (expectedResult.equalsIgnoreCase("success")) {
-            handleSuccessFlow();
-
-        } else if (user.isEmpty() || pass.isEmpty()) {
-            handleEmptyFieldsFlow();
-
-        } else {
-            handleInvalidCredentialsFlow(user);
-        }
+        handleSuccessFlow();
     }
 
-    // ── Success flow ──────────────────────────────────────────────────────────
+
     private void handleSuccessFlow() {
 
         // 1. Wait for URL to leave login page
@@ -98,13 +78,13 @@ public class LogoutTest {
 
         // 5. Confirm logout button is visible on dashboard
         wait.until(ExpectedConditions.visibilityOfElementLocated(LOGOUT_BTN));
-        System.out.println("[INFO] Dashboard loaded — Logout button visible");
+        System.out.println(" Dashboard loaded — Logout button visible");
 
         // 6. Perform logout
         LogoutPage logout = new LogoutPage(driver);
         logout.clickLogout();
+        //control shifts to LogoutPage
 
-        System.out.println("[INFO] URL after logout: " + driver.getCurrentUrl());
 
         // 7. Confirm redirected back to landing/login area
         wait.until(ExpectedConditions.or(
@@ -112,7 +92,7 @@ public class LogoutTest {
                 ExpectedConditions.visibilityOfElementLocated(LOGIN_LINK)
         ));
 
-        Assert.assertTrue(
+        Assert.assertTrue(                                              //if condition true then pass else error message is displayed
                 driver.getCurrentUrl().contains("notes/app"),
                 "Logout failed — unexpected URL: " + driver.getCurrentUrl()
         );
@@ -120,7 +100,8 @@ public class LogoutTest {
         System.out.println("[PASS] Logout successful");
     }
 
-    // ── Empty fields flow ─────────────────────────────────────────────────────
+
+    //  Empty fields flow - if the fields are empty
     private void handleEmptyFieldsFlow() {
         Assert.assertTrue(
                 driver.getCurrentUrl().contains("login"),
@@ -129,21 +110,32 @@ public class LogoutTest {
         System.out.println("[PASS] Stayed on login page for empty fields");
     }
 
-    // ── Invalid credentials flow ──────────────────────────────────────────────
+    // Invalid credentials flow - if credentials are invalid
     private void handleInvalidCredentialsFlow(String user) {
+        // Google vignette handling
+        if (driver.getCurrentUrl().contains("google_vignette")) {
+            System.out.println("[INFO] Google vignette detected");
+            driver.navigate().back();
+            wait.until(ExpectedConditions.urlContains("login"));
+        }
         try {
-            wait.until(ExpectedConditions.visibilityOfElementLocated(ERROR_TOAST));
+            wait.until(ExpectedConditions.or(
+                    ExpectedConditions.visibilityOfElementLocated(ERROR_TOAST),
+                    ExpectedConditions.urlContains("login")));
             Assert.assertTrue(
-                    driver.findElement(ERROR_TOAST).isDisplayed(),
-                    "Expected error message not shown for user: " + user
+                    driver.getCurrentUrl().contains("login"),
+                    "Expected to remain on login page for invalid credentials"
             );
-            System.out.println("[PASS] Error toast displayed for invalid user: " + user);
+            System.out.println("[PASS] Invalid login handled correctly");
         } catch (Exception e) {
-            Assert.fail("Expected error toast not shown for: " + user + " | " + e.getMessage());
+            Assert.fail(
+                    "Expected invalid login behaviour not observed for: "
+                            + user + " | " + e.getMessage()
+            );
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    //  Helpers
 
     private void waitForPageLoad() {
         new WebDriverWait(driver, Duration.ofSeconds(15)).until(

@@ -1,4 +1,4 @@
-package agentic;                          // ← must match folder location
+package agentic;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;

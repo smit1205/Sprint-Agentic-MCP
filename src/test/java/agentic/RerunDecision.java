@@ -10,11 +10,11 @@ import java.util.logging.Logger;
 
 public class RerunDecision {
 
-    private static final Logger log = Logger.getLogger(RerunDecision.class.getName());
+    private static final Logger log = Logger.getLogger(RerunDecision.class.getName());      //used for printing logs
     private final int maxReruns;
 
     public RerunDecision(int maxReruns) { this.maxReruns = maxReruns; }
-    public RerunDecision()              { this(2); }
+    public RerunDecision()              { this(2); }        //max reruns will be 2
 
     public boolean shouldRerun(Throwable failure, int currentRun) {
         if (currentRun >= maxReruns) {
@@ -38,7 +38,7 @@ public class RerunDecision {
         if (t.getCause() != null) return isFlaky(t.getCause());
 
         String msg = t.getMessage() != null ? t.getMessage().toLowerCase() : "";
-        return msg.contains("timeout") || msg.contains("connection refused");
+        return msg.contains("timeout") || msg.contains("connection refused");   //retries for this words
     }
 
     public int getMaxReruns() { return maxReruns; }

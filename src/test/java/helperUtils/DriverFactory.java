@@ -1,6 +1,8 @@
 package helperUtils;
 
 import java.time.Duration;
+
+import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -11,14 +13,15 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 
 public class DriverFactory {
 
-    // ✅ ThreadLocal — each thread gets its OWN driver, never shared
-    private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>();
 
+    private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>(); // thread local is used for parallel testing
+                                                                              //runs test in isolation
     public static WebDriver initializeBrowser(String browserName) {
 
         WebDriver webDriver;
 
         if (browserName.equalsIgnoreCase("chrome")) {
+            WebDriverManager.chromedriver().setup();
             ChromeOptions options = new ChromeOptions();
             options.addArguments("--incognito");
             options.addArguments("--disable-notifications");
@@ -26,12 +29,16 @@ public class DriverFactory {
             options.addArguments("--disable-extensions");
             options.addArguments("--disable-infobars");
             options.addArguments("--disable-blink-features=AutomationControlled");
-            webDriver = new ChromeDriver(options);
+            options.addArguments("--disable-features=InterestFeedContentSuggestions");
+            options.addArguments("--disable-features=NotificationTriggers");
 
+            webDriver = new ChromeDriver(options);
         } else if (browserName.equalsIgnoreCase("firefox")) {
+            WebDriverManager.firefoxdriver().setup();
             webDriver = new FirefoxDriver(new FirefoxOptions());
 
         } else if (browserName.equalsIgnoreCase("edge")) {
+            WebDriverManager.edgedriver().setup();
             webDriver = new EdgeDriver(new EdgeOptions());
 
         } else {
@@ -43,19 +50,19 @@ public class DriverFactory {
                 Duration.ofSeconds(ConfigReader.getImplicitWaitfromConfig())
         );
 
-        driver.set(webDriver); // ✅ binds to THIS thread only
+        driver.set(webDriver); // binds to this thread thread1 - chromedriverA..
         return webDriver;
     }
 
     public static WebDriver getDriver() {
-        return driver.get(); // ✅ returns THIS thread's driver
+        return driver.get(); // returns this thread's driver
     }
 
     public static void exitBrowser() {
         WebDriver webDriver = driver.get();
         if (webDriver != null) {
             webDriver.quit();
-            driver.remove(); // ✅ CRITICAL — cleans up thread's slot
+            driver.remove();     //cleans thread slot Thread-1 runs Test A Thread-1 finishes Thread-1 reused for Test B
         }
     }
 }

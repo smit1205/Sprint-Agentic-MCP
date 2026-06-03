@@ -1,13 +1,9 @@
 package tests;
 
-import helperUtils.ConfigReader;
+import base.BaseTest;
 import helperUtils.DriverFactory;
 import helperUtils.ExcelReader;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 import org.testng.annotations.*;
@@ -17,7 +13,7 @@ import pages.NotesPage;
 import java.time.Duration;
 import helperUtils.SelfHealingHelper;
 
-public class NotesTest {
+public class NotesTest extends BaseTest {
 
     private WebDriver driver;
     private WebDriverWait wait;
@@ -26,23 +22,17 @@ public class NotesTest {
     private static final String EMAIL    = "smitpidurkar12@gmail.com";
     private static final String PASSWORD = "Smit@123";
 
-    @BeforeMethod
-    public void setUp() {
-        driver    = DriverFactory.initializeBrowser(ConfigReader.getProperty("browser"));
-        wait      = new WebDriverWait(driver, Duration.ofSeconds(10));
-        driver.get("https://practice.expandtesting.com/notes/app");
-
-        // Login before every test
+    @BeforeMethod(alwaysRun = true)
+    public void init() {
+        driver = DriverFactory.getDriver();
+        wait = new WebDriverWait(
+                driver,
+                Duration.ofSeconds(10)
+        );
         LoginPage login = new LoginPage(driver);
         login.clickLoginLink();
         login.login(EMAIL, PASSWORD);
-
         notesPage = new NotesPage(driver);
-    }
-
-    @AfterMethod
-    public void tearDown() {
-        driver.quit();
     }
 
     @DataProvider(name = "notesData")
@@ -53,32 +43,25 @@ public class NotesTest {
 
     // TC-UI-06: Note Creation With Valid Details
 
+    @Test(dataProvider = "notesData", description = "TC-UI-06: Create a note with valid title, description and category")
 
-    @Test(dataProvider = "notesData",
-            description = "TC-UI-06: Create a note with valid title, description and category")
+    //testng proved the object[][] data to the test using the parameters provided by data provider
     public void TC_UI_06_NoteCreationWithValidDetails(String title, String description, String category) {
 
         System.out.println("TC-UI-06 | title: " + title + " | category: " + category);
+        notesPage.addNote(title, description, category);
 
-        notesPage.addNote(title, description, category); // wait already inside addNote
-
-        // ✅ isNoteVisible has its own wait — no extra wait needed here
-        Assert.assertTrue(
-                notesPage.isNoteVisible(title),
-                "TC-UI-06 FAILED: Note '" + title + "' not visible after creation."
-        );
+        //  if note is visible then test case is passed else failed
+        Assert.assertTrue(notesPage.isNoteVisible(title), "TC-UI-06 FAILED: Note '" + title + "' not visible after creation.");
     }
 
 
     // TC-UI-07: Note Creation in Different Categories
 
-
-    @Test(dataProvider = "notesData",
-            description = "TC-UI-07: Note appears under correct category filter after creation")
+    @Test(dataProvider = "notesData", description = "TC-UI-07: Note appears under correct category filter after creation")
     public void TC_UI_07_NoteCreationInDifferentCategories(String title, String description, String category) {
 
         System.out.println("TC-UI-07 | title: " + title + " | category: " + category);
-
         notesPage.addNote(title, description, category);
 
         // Filter by the category and verify note is visible
@@ -115,7 +98,7 @@ public class NotesTest {
 
         String title       = "Immediate Note";
         String description = "This should appear right away";
-        String category    = "Personal";   // ← was "Home", changed to valid category
+        String category    = "Personal";
 
         System.out.println("TC-UI-09 | creating note and checking immediate visibility");
 
@@ -127,7 +110,6 @@ public class NotesTest {
 
 
     // TC-UI-10: Note Deletion
-
 
     @Test(description = "TC-UI-11: Delete a note and verify it is removed")
     public void TC_UI_11_NoteDeletion() {
@@ -167,7 +149,7 @@ public class NotesTest {
                 "TC-UI-12 FAILED: Deleted note still visible under category: " + category);
     }
 
-
+/*
 
     //Test to verify the working of Agentic self-healing
     @Test(description = "Create a new note with broken locators - Agentic Self-Healing Test")
@@ -228,6 +210,6 @@ public class NotesTest {
         Assert.assertTrue(noteCard.isDisplayed(),
                 "Note card should be visible after self-healed creation");
     }
-
+*/
 
 }

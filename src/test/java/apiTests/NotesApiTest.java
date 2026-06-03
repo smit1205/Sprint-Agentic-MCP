@@ -23,7 +23,7 @@ public class NotesApiTest {
         Object[][] loginData = ExcelReader.getTestData(
                 "src/test/resources/testdata.xlsx", "LoginData");
 
-        // pick the first success row
+        // Find first successful user
         String email = null, password = null;
         for (Object[] row : loginData) {
             if (row[2].toString().equalsIgnoreCase("success")) {
@@ -41,17 +41,17 @@ public class NotesApiTest {
 
         // login via API to get token
         Response loginResponse = given()
-                .contentType("application/json")
-                .body(requestBody)
+                .contentType("application/json")            //server expects json
+                .body(requestBody)                          //Adds login payload
                 .when()
-                .post("/users/login")
+                .post("/users/login")           //send request
                 .then()
                 .extract().response();
 
         System.out.println("Login Status: " + loginResponse.getStatusCode());
         System.out.println("Login Response: " + loginResponse.getBody().asString());
 
-        token = loginResponse.jsonPath().getString("data.token");
+        token = loginResponse.jsonPath().getString("data.token");           //extracts token
         System.out.println("Token: " + token);
 
         // create a note to use in delete test
@@ -65,7 +65,7 @@ public class NotesApiTest {
                 .extract().response();
 
         System.out.println("Create Note Response: " + createNote.getBody().asString());
-        noteId = createNote.jsonPath().getString("data.id");
+        noteId = createNote.jsonPath().getString("data.id");        //extract id to use it when deleting note
         System.out.println("Created Note ID: " + noteId);
     }
 
@@ -125,6 +125,7 @@ public class NotesApiTest {
                 .then()
                 .extract().response();
 
+        // checks success:true ? , status, data exist
         Assert.assertNotNull(response.jsonPath().get("success"),
                 "TC-API-04 FAILED: 'success' field missing");
         Assert.assertNotNull(response.jsonPath().get("status"),
@@ -140,7 +141,7 @@ public class NotesApiTest {
         Response response = given()
                 .header("x-auth-token", token)
                 .when()
-                .delete("/notes/" + noteId)
+                .delete("/notes/" + noteId)     //which was stored at the top when note was created
                 .then()
                 .extract().response();
 

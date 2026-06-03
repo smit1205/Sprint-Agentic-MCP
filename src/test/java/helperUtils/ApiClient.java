@@ -24,13 +24,13 @@ public class ApiClient {
         String body = "email=" + email + "&password=" + password;
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/users/login"))
-                .header("Content-Type", "application/x-www-form-urlencoded")
+                .uri(URI.create(BASE_URL + "/users/login"))  //final created url
+                .header("Content-Type", "application/x-www-form-urlencoded")  //I am sending form data
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        JSONObject json = new JSONObject(response.body());
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString()); //send request
+        JSONObject json = new JSONObject(response.body());      //can access the json fields
         return json.getJSONObject("data").getString("token");
     }
 
@@ -44,7 +44,7 @@ public class ApiClient {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         JSONObject json = new JSONObject(response.body());
-        return json.getJSONArray("data");
+        return json.getJSONArray("data");           //returns json array containing all notes
     }
 
     // ── GET /notes — find by title ──

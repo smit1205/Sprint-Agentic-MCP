@@ -13,7 +13,7 @@ public class RetryAnalyzer implements IRetryAnalyzer, IAnnotationTransformer {
     private int count = 0;
     private static final int MAX_RETRY = 2;
 
-    // ── Retry logic ───────────────────────────────────────────────────────
+    // Decides whether failed test should run again and Automatically attaches RetryAnalyzer to every @Test
     @Override
     public boolean retry(ITestResult result) {
         if (count < MAX_RETRY) {
@@ -29,10 +29,7 @@ public class RetryAnalyzer implements IRetryAnalyzer, IAnnotationTransformer {
 
     // ── Auto-injects retryAnalyzer into every @Test in the suite ─────────
     @Override
-    public void transform(ITestAnnotation annotation,
-                          Class testClass,
-                          Constructor testConstructor,
-                          Method testMethod) {
+    public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {
         annotation.setRetryAnalyzer(RetryAnalyzer.class);
     }
 }

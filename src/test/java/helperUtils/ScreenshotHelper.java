@@ -14,7 +14,7 @@ public class ScreenshotHelper {
 
         String timestamp =
                 new SimpleDateFormat("yyyyMMdd_HHmmss")
-                        .format(new Date());
+                        .format(new Date());  //makes every screenshot unique
 
         String path =
                 System.getProperty("user.dir")
@@ -27,7 +27,7 @@ public class ScreenshotHelper {
                         .getScreenshotAs(OutputType.FILE);
 
         try {
-            FileUtils.copyFile(src, new File(path));
+            FileUtils.copyFile(src, new File(path));        //Copies temporary screenshot file to screenshots/
         } catch (IOException e) {
             e.printStackTrace();
         }

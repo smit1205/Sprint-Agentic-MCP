@@ -28,6 +28,7 @@ public class LogoutPage {
                 ExpectedConditions.elementToBeClickable(logoutBtn)
         );
 
+        //scrolls to the button
         ((JavascriptExecutor) driver).executeScript(
                 "arguments[0].scrollIntoView({block:'center'});", btn
         );

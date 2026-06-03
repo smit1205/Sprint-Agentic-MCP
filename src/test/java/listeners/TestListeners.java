@@ -16,33 +16,25 @@ import java.lang.reflect.Method;
 
 public class TestListeners implements ITestListener, IAnnotationTransformer {
 
-    // ── NEW — auto injects RetryAnalyzer into every @Test ─────────────────
+    // auto injects RetryAnalyzer into every @Test
     @Override
     public void transform(ITestAnnotation annotation,
                           Class testClass,
                           Constructor testConstructor,
                           Method testMethod) {
 
-        // Skip retry for API tests — they are deterministic
+        // Skip retry for API tests
         if (testClass != null && testClass.getPackageName().equals("apiTests")) {
             return;
         }
-
         annotation.setRetryAnalyzer(RetryAnalyzer.class);
     }
 
-    // ── EXISTING — untouched ──────────────────────────────────────────────
     @Override
     public void onTestFailure(ITestResult result) {
 
         String testName = result.getName();
-
-        String screenshotPath =
-                ScreenshotHelper.captureScreenshot(
-                        DriverFactory.getDriver(),
-                        testName
-                );
-
+        String screenshotPath = ScreenshotHelper.captureScreenshot(DriverFactory.getDriver(), testName);
         try {
             Allure.addAttachment(
                     "Failure Screenshot",

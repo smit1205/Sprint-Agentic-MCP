@@ -6,11 +6,7 @@ import org.testng.annotations.Test;
 
 /**
  * MCPTest — TestNG wrapper so you can run MCP commands as part of your test suite.
- *
- * Run via Maven:
  *   mvn test -Dtest=MCPTest
- *
- * Or specify a custom command at runtime:
  *   mvn test -Dtest=MCPTest -Dmcp.command="create note titled Sprint Planning"
  */
 public class MCPTest {
@@ -40,7 +36,7 @@ public class MCPTest {
     // ── Dynamic command from system property ──────────────────────
     @Test(description = "MCP: Run dynamic command from -Dmcp.command=...")
     public void testMCPDynamicCommand() {
-        String cmd = System.getProperty("mcp.command", "view all notes");
-        controller.execute(cmd);
+        String cmd = System.getProperty("mcp.command", "view all notes");       //stores command from terminal in cmd
+        controller.execute(cmd);            //e.g. execute(login)
     }
 }
