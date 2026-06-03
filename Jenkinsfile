@@ -15,11 +15,11 @@ pipeline {
         }
 
         stage('Checkout Code') {
-            steps {
-                git branch: 'main',
-                url: 'https://github.com/smit1205/notes-capstone.git'
-            }
-        }
+    steps {
+        git branch: 'main',
+        url: 'https://github.com/smit1205/Sprint-Agentic-MCP.git'
+    }
+}
 
         stage('Verify Environment') {
             steps {
